@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"; charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>CSO COVID-19 Mapping</title>
+
+	<!-- adding leaflet css and js files-->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+   			integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+   			crossorigin=""/>
+	<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+   			integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+   			crossorigin=""></script>
+
+	<!-- add world country file. Dont forget to modify the file by adding variable name before data = {} -->
+	<script type="text/javascript" src="data/cso_covid.geojson"></script>
+	<script type="text/javascript" src="data/world_vision.geojson"></script>
+
+
+	<script type="text/javascript">
+
+		function init() {
+			// set the centre and zoom level 
+			var map = new L.map('mapid').setView([-0.89, 36.819], 6);
+			// add basemaps from cartodb - darkmatter. 
+			var CartoDB = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png', {
+				attribution: '&copy; foloo, bmitto contributors: <a href="http://cartodb.com/attributions#basemaps">CartoDB</a>',
+				subdomains:'abcd',
+				minZoom:4, 
+				maxZoom:15
+			});
+			// add the second basemap from OSM
+	        var osm = L.tileLayer ('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+	           	attribution: '&copy; OSM',
+	            minZoom: 4,
+	            maxZoom: 15
+	        }).addTo(map);
+	        // write a function that varies the sizes of the circle based on selected attribute
+			function iconsize (s) {
+				if(s > 313973000) {
+					return [40, 40];
+				}else if (s > 111211789) {
+					return [30, 30];
+				}else if (s > 29546963) {
+					return [20, 20];
+				}else {
+					return [10,10]
+				}
+			}
+			// read the geojson file. remember that we added a variable "points" in the file
+			var cso_site = new L.geoJSON(cso, {
+				pointToLayer: function(feature, latlng) {
+					var marker = L.marker(latlng, {icon: L.icon({
+														iconUrl: 'icons/radial.gif',
+														iconSize: [15, 15]}) });
+					var feat_website = feature.properties.website;
+					if (feat_website != null){
+					marker.bindPopup("<table><tr><td><b>Organization</td><td><b>"+ feature.properties.organization + "</b></b><td/></tr>\
+						<tr><td><b> County</b></td><td>"+ feature.properties.county+"</td></tr>\
+						<tr><td><b> Site</b></td><td>"+feature.properties.location+"</td></tr>\
+						<tr><td><b> Type</b></td><td>"+feature.properties.type+"</td></tr>\
+						<tr><td><b> Contact Person</b></td><td>"+feature.properties.contact+"</td></tr>\
+						<tr><td><b> Email</b></td><td>"+feature.properties.email+"</td></tr>\
+						<tr><td><b> Website</b></td><td><a href="+feature.properties.website+" target='_blank'>Visit website</a></td></tr>\
+						<tr><td><b> Activity</b></td><td>"+feature.properties.activities+"</td></tr></table>");
+						}else{
+						marker.bindPopup("<table><tr><td><b>Organization</td><td><b>"+ feature.properties.organization + "</b></b><td/></tr>\
+						<tr><td><b> County</b></td><td>"+ feature.properties.county+"</td></tr>\
+						<tr><td><b> Site</b></td><td>"+feature.properties.location+"</td></tr>\
+						<tr><td><b> Type</b></td><td>"+feature.properties.type+"</td></tr>\
+						<tr><td><b> Contact Person</b></td><td>"+feature.properties.contact+"</td></tr>\
+						<tr><td><b> Email</b></td><td>"+feature.properties.email+"</td></tr>\
+						<tr><td><b> Activity</b></td><td>"+feature.properties.activities+"</td></tr></table>");
+						}
+					return marker;
+				},
+
+			}).addTo(map);
+
+			var wvi = new L.geoJSON(wv, {
+				pointToLayer: function(feature, latlng) {
+					var circle = L.circleMarker(latlng, {
+						color: 'white',
+						fillColor: 'red',
+						fillOpacity: 0.7,
+						radius: 5,
+						weight:2,
+						opacity: 0.9
+					});
+
+					circle.bindPopup("<table><tr><td><b> Organization</td><td> World Vision </td></tr>\
+						<tr><td><b> County</b></td><td>"+feature.properties.county+"</td></tr>\
+						<tr><td><b> Activity</b></td><td>"+feature.properties.activity+"</td></tr>\
+						<tr><td><b> Website</b></td><td><a href='https://www.wvi.org/kenya' target='_blank'>Click Here</a></td></tr></table>");
+					return circle;
+				},
+			});
+
+			// add a container to control the layers
+			L.control.layers({"CartoDB": CartoDB, "OpenStreetMap": osm}, {"Local CSO Sites": cso_site, "World Vision (Kenya)": wvi}, {position: 'topleft'}).addTo(map);
+		};
+
+	</script>
+
+	<style type="text/css">
+		table {
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+		td {
+			border: 1px solid black;
+		}
+	</style>
+</head>
+<body onload="init()">
+	<!-- set the div element and style the map -->
+	<div id="mapid" style="height: 700px; width: 100%; padding: 20px"></div>
+	<table id="properties"></table>
+
+</body>
+</html>
